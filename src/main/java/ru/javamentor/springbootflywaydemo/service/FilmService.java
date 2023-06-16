@@ -7,11 +7,13 @@ import ru.javamentor.springbootflywaydemo.model.Film;
 import ru.javamentor.springbootflywaydemo.model.FilmsParametersDto;
 import ru.javamentor.springbootflywaydemo.repository.FilmRepository;
 
+import javax.activation.DataHandler;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.util.ByteArrayDataSource;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.StringWriter;
@@ -86,8 +88,10 @@ public class FilmService {
             message.setText("Please find attached film report");
 
             MimeBodyPart attachmentPart = new MimeBodyPart();
-            attachmentPart.setContent(report,"text/csv");
+//            attachmentPart.setContent(report,"text/csv");
+            attachmentPart.setDataHandler(new DataHandler(new ByteArrayDataSource(report.getBytes(),"text/csv")));
             attachmentPart.setFileName("film_report.csv");
+//            attachmentPart.setFileName("film_report.csv");
 
             Multipart multipart = new MimeMultipart();
             multipart.addBodyPart(attachmentPart);
