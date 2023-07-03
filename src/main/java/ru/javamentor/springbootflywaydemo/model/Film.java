@@ -6,8 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.lang.annotation.Documented;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,5 +30,4 @@ public class Film {
     @Column(name = "description")
     @JsonProperty("description")
     private String description;
-
 }

@@ -1,10 +1,12 @@
 package ru.javamentor.springbootflywaydemo.service;
 
 import com.opencsv.CSVWriter;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.javamentor.springbootflywaydemo.dto.FilmsParametersDto;
 import ru.javamentor.springbootflywaydemo.model.Film;
-import ru.javamentor.springbootflywaydemo.model.FilmsParametersDto;
 import ru.javamentor.springbootflywaydemo.repository.FilmRepository;
 
 import javax.activation.DataHandler;
@@ -14,84 +16,119 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 
 @Service
+@RequiredArgsConstructor
 public class FilmService {
-    @Autowired
-    private FilmRepository filmRepository;
-    @Autowired
-    private KinoExchangeClient kinoExchangeClient;
+    private final FilmRepository filmRepository;
+    private final KinoExchangeClient kinoExchangeClient;
 
-    public void saveFilm(Film film){
-       if(!filmRepository.existsByFilmId(film.getFilmId())){
-            filmRepository.save(film);
+    @Value("${mail.from}")
+    String from;
+    @Value("${mail.to}")
+    String to;
+    @Value("${mail.password}")
+    String password;
+    @Value("${mail.host}")
+    String host;
+    @Value("${mail.smtpPort}")
+    String smtpPort;
+    @Value("${mail.subject}")
+    String subject;
+    @Value("${mail.text}")
+    String text;
+    @Value("${mail.mailSmtpHost}")
+    String mailSmtpHost;
+    @Value("${mail.mailSmtpPort}")
+    String mailSmtpPort;
+    @Value("${mail.mailSmtpSsl}")
+    String mailSmtpSsl;
+    @Value("${mail.mailSmtpAuth}")
+    String mailSmtpAuth;
+
+    public void save(List<Film> films) {
+        for (Film film : films) {
+            if (!filmRepository.existsByFilmId(film.getFilmId())) {
+                filmRepository.save(film);
+            }
         }
     }
 
-    public void saveAll(List<Film> films){
-        for (Film film:films) {
-            saveFilm(film);
-        }
-    }
-
-    public List<Film> findAll(FilmsParametersDto filmsParametrsDto){
+    public List<Film> fetchAndSaveFilms(FilmsParametersDto filmsParametrsDto) {
         List<Film> list = kinoExchangeClient.getFilms(filmsParametrsDto);
-        saveAll(list);
+        save(list);
         return list;
     }
 
-    public void mailSender(List<Film> films){
-        String from = "test192rs@gmail.com";
-        String to = "test192rs@gmail.com";
-        String password = "kpaawbgmelbnwjna";
-        String host = "smtp.gmail.com";
-        String smtpPort = "465";
+//    public List<Film> findAll(FilmsParametersDto filmsParametrsDto) {
+//        Specification<Film> specification = Specification.where(null);
+//
+//        if (filmsParametrsDto.getGenre() != null) {
+//            specification = specification.and(FilmSpecifications.hasGenre(filmsParametrsDto.getGenre()));
+//        }
+//        if (filmsParametrsDto.getYear() != null) {
+//            specification = specification.and(FilmSpecifications.hasYear(filmsParametrsDto.getYear()));
+//        }
+//        if (filmsParametrsDto.getRating() != null) {
+//            specification = specification.and(FilmSpecifications.hasRating(filmsParametrsDto.getRating()));
+//        }
+//
+//        Pageable pageable = PageRequest.of(filmsParametrsDto.getPage(), filmsParametrsDto.getSize());
+//
+//        return filmRepository.findAll(specification, pageable).getContent();
+//    }
 
+    public List<Film> getFilmsByParameters(FilmsParametersDto filmsParametersDto, Pageable pageable) {
+        Integer ratingFrom = filmsParametersDto.getRatingFrom();
+        Integer ratingTo = filmsParametersDto.getRatingTo();
+        Integer yearFrom = filmsParametersDto.getYearFrom();
+        Integer yearTo = filmsParametersDto.getYearTo();
+        String keyword = filmsParametersDto.getKeyword();
+        Integer page = filmsParametersDto.getPage();
+
+        if (page == null) {
+            page = 0;
+        }
+        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, pageable);
+    }
+
+
+    public void mailSender(List<Film> films) {
 
         Properties properties = new Properties();
-        properties.put("mail.smtp.host", host);
-        properties.put("mail.smtp.port", smtpPort);
-        properties.put("mail.smtp.ssl.enable", "true");
-        properties.put("mail.smtp.auth", "true");
+        properties.put(mailSmtpHost, host);
+        properties.put(mailSmtpPort, smtpPort);
+        properties.put(mailSmtpSsl, "true");
+        properties.put(mailSmtpAuth, "true");
 
         Session session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from,password);
+                return new PasswordAuthentication(from, password);
             }
         });
         session.setDebug(true);
-        try {
-//            File file = new File("film_report.csv");
-//            FileWriter writer = new FileWriter(file);
-            StringWriter writer = new StringWriter();
+        try (StringWriter writer = new StringWriter()) {
             CSVWriter csvWriter = new CSVWriter(writer);
-            csvWriter.writeNext( new String[]{"film_id", "film_name", "year", "rating", "description"});
-            for(Film film : films){
-                csvWriter.writeNext( new String[]{String.valueOf(film.getFilmId()), film.getFilmName(), String.valueOf(film.getYear()), String.valueOf(film.getRating()), film.getDescription()});
+            csvWriter.writeNext(new String[]{"film_id", "film_name", "year", "rating", "description"});
+            for (Film film : films) {
+                csvWriter.writeNext(new String[]{String.valueOf(film.getFilmId()), film.getFilmName(), String.valueOf(film.getYear()), String.valueOf(film.getRating()), film.getDescription()});
             }
             csvWriter.close();
             String report = writer.toString();
 
-
             MimeMessage message = new MimeMessage(session);
             message.setFrom(new InternetAddress(from));
             message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
-            message.setSubject("Film report");
-            message.setText("Please find attached film report");
+            message.setSubject(subject);
+            message.setText(text);
 
             MimeBodyPart attachmentPart = new MimeBodyPart();
-//            attachmentPart.setContent(report,"text/csv");
-            attachmentPart.setDataHandler(new DataHandler(new ByteArrayDataSource(report.getBytes(),"text/csv")));
+            attachmentPart.setDataHandler(new DataHandler(new ByteArrayDataSource(report.getBytes(), "text/csv")));
             attachmentPart.setFileName("film_report.csv");
-//            attachmentPart.setFileName("film_report.csv");
 
             Multipart multipart = new MimeMultipart();
             multipart.addBodyPart(attachmentPart);
@@ -100,23 +137,8 @@ public class FilmService {
 
             Transport.send(message);
 
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-//    public Map<Integer, String> getFilmsDescriptions(List<Integer> movieIds){
-//        return kinoExchangeClient.getFilmsDescriptions(movieIds);
-//    }
-
-//    public void saveFilmsDescriptions(Map<Integer,String> filmsDescriptions) {
-//        for (Integer movieId : filmsDescriptions.keySet()) {
-//            Optional<Film> optionalFilm = filmRepository.findById(Long.valueOf(movieId));
-//            if (optionalFilm.isPresent()) {
-//                Film film = optionalFilm.get();
-//                film.setDescription(filmsDescriptions.get(movieId));
-//                filmRepository.save(film);
-//            }
-//        }
-//    }
 }
