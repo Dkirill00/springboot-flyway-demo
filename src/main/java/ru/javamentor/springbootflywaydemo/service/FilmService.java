@@ -10,8 +10,10 @@ import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.util.ByteArrayDataSource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.javamentor.springbootflywaydemo.config.MailConfigProperties;
 import ru.javamentor.springbootflywaydemo.dto.FilmsParametersDto;
 import ru.javamentor.springbootflywaydemo.model.Film;
 import ru.javamentor.springbootflywaydemo.repository.FilmRepository;
@@ -25,29 +27,7 @@ import java.util.Properties;
 public class FilmService {
     private final FilmRepository filmRepository;
     private final KinoExchangeClient kinoExchangeClient;
-
-    @Value("${mail.from}")
-    String from;
-    @Value("${mail.to}")
-    String to;
-    @Value("${mail.password}")
-    String password;
-    @Value("${mail.host}")
-    String host;
-    @Value("${mail.smtpPort}")
-    String smtpPort;
-    @Value("${mail.subject}")
-    String subject;
-    @Value("${mail.text}")
-    String text;
-    @Value("${mail.mailSmtpHost}")
-    String mailSmtpHost;
-    @Value("${mail.mailSmtpPort}")
-    String mailSmtpPort;
-    @Value("${mail.mailSmtpSsl}")
-    String mailSmtpSsl;
-    @Value("${mail.mailSmtpAuth}")
-    String mailSmtpAuth;
+    private final MailConfigProperties mailCfg;
 
     public void save(List<Film> films) {
         for (Film film : films) {
@@ -89,7 +69,22 @@ public class FilmService {
         String keyword = filmsParametersDto.getKeyword();
         Integer page = filmsParametersDto.getPage();
 
-        if (page == null) {
+        if (ratingFrom == null) {
+            ratingFrom = 0;
+        }
+        if (ratingTo == null) {
+            ratingTo = 10;
+        }
+        if (yearFrom == null) {
+            yearFrom = 1000;
+        }
+        if (yearTo == null) {
+            yearTo = 3000;
+        }
+        if (keyword == null) {
+            keyword = "";
+        }
+        if (page == null || page < 0) {
             page = 0;
         }
         return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, pageable);
@@ -99,15 +94,15 @@ public class FilmService {
     public void mailSender(List<Film> films) {
 
         Properties properties = new Properties();
-        properties.put(mailSmtpHost, host);
-        properties.put(mailSmtpPort, smtpPort);
-        properties.put(mailSmtpSsl, "true");
-        properties.put(mailSmtpAuth, "true");
+        properties.put(mailCfg.getMailSmtpHost(), mailCfg.getHost());
+        properties.put(mailCfg.getMailSmtpPort(), mailCfg.getSmtpPort());
+        properties.put(mailCfg.getMailSmtpSsl(), "true");
+        properties.put(mailCfg.getMailSmtpAuth(), "true");
 
         Session session = Session.getInstance(properties, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(from, password);
+                return new PasswordAuthentication(mailCfg.getFrom(), mailCfg.getPassword());
             }
         });
         session.setDebug(true);
@@ -121,10 +116,10 @@ public class FilmService {
             String report = writer.toString();
 
             MimeMessage message = new MimeMessage(session);
-            message.setFrom(new InternetAddress(from));
-            message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
-            message.setSubject(subject);
-            message.setText(text);
+            message.setFrom(new InternetAddress(mailCfg.getFrom()));
+            message.addRecipient(Message.RecipientType.TO, new InternetAddress(mailCfg.getTo()));
+            message.setSubject(mailCfg.getSubject());
+            message.setText(mailCfg.getText());
 
             MimeBodyPart attachmentPart = new MimeBodyPart();
             attachmentPart.setDataHandler(new DataHandler(new ByteArrayDataSource(report.getBytes(), "text/csv")));

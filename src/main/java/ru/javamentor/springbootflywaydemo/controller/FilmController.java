@@ -5,14 +5,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.javamentor.springbootflywaydemo.CustomException.CustomExceptionOne;
-import ru.javamentor.springbootflywaydemo.CustomException.CustomExceptionTwo;
+import ru.javamentor.springbootflywaydemo.CustomException.FilmSearchException;
+import ru.javamentor.springbootflywaydemo.CustomException.ReportSendingException;
 import ru.javamentor.springbootflywaydemo.dto.FilmsParametersDto;
 import ru.javamentor.springbootflywaydemo.model.Film;
 import ru.javamentor.springbootflywaydemo.service.FilmService;
 
 import java.util.List;
-
 
 @RestController
 @RequestMapping("/api/film")
@@ -23,25 +22,26 @@ public class FilmController {
     @GetMapping("/serchFilmsOfDb")
     public ResponseEntity<List<Film>> getFilmsOfParam(FilmsParametersDto filmsParametersDto, @RequestParam(required = false, defaultValue = "10") int pageSize) {
         try {
-            if (pageSize != 0) {
-                List<Film> filmList = filmService.getFilmsByParameters(filmsParametersDto, Pageable.ofSize(pageSize));
-                return ResponseEntity.ok(filmList);
+            Pageable pageable;
+            if(pageSize <= 0) {
+                pageable = Pageable.unpaged();
             } else {
-                throw new CustomExceptionOne(" ноль нельзя ");
+                pageable = Pageable.ofSize(pageSize);
             }
-        } catch (CustomExceptionOne ex) {
+            List<Film> filmList = filmService.getFilmsByParameters(filmsParametersDto, pageable);
+            return ResponseEntity.ok(filmList);
+        } catch (FilmSearchException ex) {
             System.err.println(ex.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
     }
-
 
     @GetMapping
     public ResponseEntity<List<Film>> getListOfProviders(FilmsParametersDto filmsParametrsDto) {
         try {
             List<Film> filmList = filmService.fetchAndSaveFilms(filmsParametrsDto);
             return ResponseEntity.ok(filmList);
-        } catch (CustomExceptionOne ex) {
+        } catch (FilmSearchException ex) {
             throw ex;
         }
     }
@@ -50,7 +50,7 @@ public class FilmController {
     public void sendReport(@RequestBody List<Film> filmList) {
         try {
             filmService.mailSender(filmList);
-        } catch (CustomExceptionTwo ex) {
+        } catch (ReportSendingException ex) {
             throw ex;
         }
     }
