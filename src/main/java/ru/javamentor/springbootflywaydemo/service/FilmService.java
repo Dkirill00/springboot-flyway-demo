@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import ru.javamentor.springbootflywaydemo.config.MailConfigProperties;
 import ru.javamentor.springbootflywaydemo.dto.FilmsParametersDto;
@@ -25,6 +26,7 @@ import java.util.Properties;
 @Service
 @RequiredArgsConstructor
 public class FilmService {
+    private JmsTemplate jmsTemplate;
     private final FilmRepository filmRepository;
     private final KinoExchangeClient kinoExchangeClient;
     private final MailConfigProperties mailCfg;
@@ -88,6 +90,11 @@ public class FilmService {
             page = 0;
         }
         return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, pageable);
+    }
+
+    public void sendFilmsViaArtemisMQ(List<Film> films){
+        //Отправляем список фильмов через ArtemisMQ
+        jmsTemplate.convertAndSend("filmQueue",films);
     }
 
 
