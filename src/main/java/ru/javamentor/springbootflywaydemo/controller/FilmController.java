@@ -31,28 +31,6 @@ public class FilmController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    @GetMapping("/serchFilmsOfDb")
-    public ResponseEntity<List<Film>> getFilmsOfParam(FilmsParametersDto filmsParametersDto, @RequestParam(required = false, defaultValue = "10") int pageSize) {
-        try {
-            Pageable pageable;
-            if(pageSize <= 0) {
-                pageable = Pageable.unpaged();
-            } else {
-                pageable = Pageable.ofSize(pageSize);
-            }
-            List<Film> filmList = filmService.getFilmsByParameters(filmsParametersDto, pageable);
-
-            if (filmList.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            return ResponseEntity.ok(filmList);
-        } catch (FilmSearchException ex) {
-            System.err.println(ex.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-    }
-
 //    @GetMapping("/serchFilmsOfDb")
 //    public ResponseEntity<List<Film>> getFilmsOfParam(FilmsParametersDto filmsParametersDto, @RequestParam(required = false, defaultValue = "10") int pageSize) {
 //        try {
@@ -63,12 +41,34 @@ public class FilmController {
 //                pageable = Pageable.ofSize(pageSize);
 //            }
 //            List<Film> filmList = filmService.getFilmsByParameters(filmsParametersDto, pageable);
+//
+//            if (filmList.isEmpty()) {
+//                return ResponseEntity.notFound().build();
+//            }
+//
 //            return ResponseEntity.ok(filmList);
 //        } catch (FilmSearchException ex) {
 //            System.err.println(ex.getMessage());
 //            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
 //        }
 //    }
+
+    @GetMapping("/serchFilmsOfDb")
+    public ResponseEntity<List<Film>> getFilmsOfParam(FilmsParametersDto filmsParametersDto, @RequestParam(required = false, defaultValue = "10") int pageSize) {
+        try {
+            Pageable pageable;
+            if(pageSize <= 0) {
+                pageable = Pageable.unpaged();
+            } else {
+                pageable = Pageable.ofSize(pageSize);
+            }
+            List<Film> filmList = filmService.getFilmsByParameters(filmsParametersDto, pageable);
+            return ResponseEntity.ok(filmList);
+        } catch (FilmSearchException ex) {
+            System.err.println(ex.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+    }
 
     @GetMapping
     public ResponseEntity<List<Film>> getListOfProviders(FilmsParametersDto filmsParametrsDto) {
