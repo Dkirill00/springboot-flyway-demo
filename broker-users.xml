@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<users xmlns="http://activemq.apache.org/schema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://activemq.apache.org/schema activemq-users.xsd">
-    <user name="admin" password="admin" roles="amq"/>
-</users>

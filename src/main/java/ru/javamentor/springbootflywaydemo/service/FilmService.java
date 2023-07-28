@@ -11,6 +11,7 @@ import jakarta.mail.util.ByteArrayDataSource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
@@ -26,10 +27,13 @@ import java.util.Properties;
 @Service
 @RequiredArgsConstructor
 public class FilmService {
-    private JmsTemplate jmsTemplate;
+    private final JmsTemplate jmsTemplate;
     private final FilmRepository filmRepository;
     private final KinoExchangeClient kinoExchangeClient;
     private final MailConfigProperties mailCfg;
+
+    @Value("${jms.queue}")
+    String jmsQueue;
 
     public void save(List<Film> films) {
         for (Film film : films) {
@@ -70,6 +74,7 @@ public class FilmService {
         Integer yearTo = filmsParametersDto.getYearTo();
         String keyword = filmsParametersDto.getKeyword();
         Integer page = filmsParametersDto.getPage();
+        List<String> genres = filmsParametersDto.getGenres();
 
         if (ratingFrom == null) {
             ratingFrom = 0;
@@ -87,15 +92,46 @@ public class FilmService {
             keyword = "";
         }
         if (page == null || page < 0) {
-            page = 0;
+            page = 10;
         }
-        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, pageable);
+
+        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, genres, pageable);
     }
 
-    public void sendFilmsViaArtemisMQ(List<Film> films){
-        //Отправляем список фильмов через ArtemisMQ
-        jmsTemplate.convertAndSend("filmQueue",films);
-    }
+//    public List<Film> getFilmsByParameters(FilmsParametersDto filmsParametersDto, Pageable pageable) {
+//        Integer ratingFrom = filmsParametersDto.getRatingFrom();
+//        Integer ratingTo = filmsParametersDto.getRatingTo();
+//        Integer yearFrom = filmsParametersDto.getYearFrom();
+//        Integer yearTo = filmsParametersDto.getYearTo();
+//        String keyword = filmsParametersDto.getKeyword();
+//        Integer page = filmsParametersDto.getPage();
+//        List<String> genres= filmsParametersDto.getGenres();
+//
+//        if (ratingFrom == null) {
+//            ratingFrom = 0;
+//        }
+//        if (ratingTo == null) {
+//            ratingTo = 10;
+//        }
+//        if (yearFrom == null) {
+//            yearFrom = 1000;
+//        }
+//        if (yearTo == null) {
+//            yearTo = 3000;
+//        }
+//        if (keyword == null) {
+//            keyword = "";
+//        }
+//        if (page == null || page < 0) {
+//            page = 10;
+//        }
+//        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, genres,pageable);
+//    }
+
+//    public void sendFilmsViaArtemisMQ(List<Film> films){
+//        //Отправляем список фильмов через ArtemisMQ
+//        jmsTemplate.convertAndSend(jmsQueue,films);
+//    }
 
 
     public void mailSender(List<Film> films) {
