@@ -1,5 +1,6 @@
 package ru.javamentor.springbootflywaydemo.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVWriter;
 import jakarta.activation.DataHandler;
 import jakarta.mail.*;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
@@ -73,8 +75,8 @@ public class FilmService {
         Integer yearFrom = filmsParametersDto.getYearFrom();
         Integer yearTo = filmsParametersDto.getYearTo();
         String keyword = filmsParametersDto.getKeyword();
-        Integer page = filmsParametersDto.getPage();
         List<String> genres = filmsParametersDto.getGenres();
+        Integer page = filmsParametersDto.getPage();
 
         if (ratingFrom == null) {
             ratingFrom = 0;
@@ -94,8 +96,9 @@ public class FilmService {
         if (page == null || page < 0) {
             page = 10;
         }
+        int pageSize =10;
 
-        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, genres, pageable);
+        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, genres,pageable);
     }
 
 //    public List<Film> getFilmsByParameters(FilmsParametersDto filmsParametersDto, Pageable pageable) {
@@ -128,13 +131,17 @@ public class FilmService {
 //        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, genres,pageable);
 //    }
 
-//    public void sendFilmsViaArtemisMQ(List<Film> films){
-//        //Отправляем список фильмов через ArtemisMQ
-//        jmsTemplate.convertAndSend(jmsQueue,films);
-//    }
+    public void sendFilmsViaArtemisMQ(List<Film> films){
+        //Отправляем список фильмов через ArtemisMQ
+        jmsTemplate.convertAndSend(jmsQueue,films);
+    }
 
 
     public void mailSender(List<Film> films) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        String genresJsonString;
+
+
 
         Properties properties = new Properties();
         properties.put(mailCfg.getMailSmtpHost(), mailCfg.getHost());
@@ -151,9 +158,10 @@ public class FilmService {
         session.setDebug(true);
         try (StringWriter writer = new StringWriter()) {
             CSVWriter csvWriter = new CSVWriter(writer);
-            csvWriter.writeNext(new String[]{"film_id", "film_name", "year", "rating", "description"});
+            csvWriter.writeNext(new String[]{"film_id", "film_name", "year", "rating", "description", "genres"});
             for (Film film : films) {
-                csvWriter.writeNext(new String[]{String.valueOf(film.getFilmId()), film.getFilmName(), String.valueOf(film.getYear()), String.valueOf(film.getRating()), film.getDescription()});
+                genresJsonString = objectMapper.writeValueAsString(film.getGenres());
+                csvWriter.writeNext(new String[]{String.valueOf(film.getFilmId()), film.getFilmName(), String.valueOf(film.getYear()), String.valueOf(film.getRating()), film.getDescription(), genresJsonString});
             }
             csvWriter.close();
             String report = writer.toString();

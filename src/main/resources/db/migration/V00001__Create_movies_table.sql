@@ -4,8 +4,8 @@ CREATE TABLE `streaming_service`.`film` (
                                               `film_name` VARCHAR(255) NULL,
                                               `year` INT NULL,
                                               `rating` FLOAT NULL,
-                                              `genres` VARCHAR(1000) NULL,
-#                                               `genres` JSON NULL,
+#                                               `genres` VARCHAR(1000) NULL,
+                                              `genres` JSON NULL,
                                               `description` VARCHAR(10000) NULL,
                                               PRIMARY KEY (`id`));
 CREATE TABLE `streaming_service`.`genress` (

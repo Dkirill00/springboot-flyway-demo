@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 //@Embeddable
 public class Genre {
-    private String id;
+    private Integer id;
     private String genre;
 }

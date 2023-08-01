@@ -18,15 +18,15 @@ public class FilmListener {
 
     Logger log = LoggerFactory.getLogger(FilmListener.class);
 
-//    @JmsListener(destination = "${jms.queue}")
+    @JmsListener(destination = "${jms.queue}")
     public void receiveFilmList(List<Film> filmList){
         log.info("Done");
         filmService.mailSender(filmList);
 
-//        try {
-//            filmService.mailSender(filmList);
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
+        try {
+            filmService.mailSender(filmList);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }

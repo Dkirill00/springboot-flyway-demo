@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import ru.javamentor.springbootflywaydemo.dto.FilmsParametersDto;
 import ru.javamentor.springbootflywaydemo.model.Film;
 
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -19,26 +20,26 @@ public class FilmScheduler {
 
     // Scheduler будет запускаться каждый день в 8 утра
 //    @Scheduled(cron = "0 0 8 * * ?")
-//    @Scheduled(cron = "0 * * * * ?")
+    @Scheduled(cron = "0 * * * * ?")
     public void fetchAndSendFilmsByGenre() {
         int dayOfWeek = java.time.LocalDate.now().getDayOfWeek().getValue();
 
         String genre = getGenreByDayOfWeek(dayOfWeek);
 
         FilmsParametersDto filmsParametersDto = new FilmsParametersDto();
-        filmsParametersDto.setKeyword("war");
-        filmsParametersDto.setYearTo(2023);
-        filmsParametersDto.setYearFrom(2000);
+//        filmsParametersDto.setKeyword("war");
+        filmsParametersDto.setYearTo(3000);
+        filmsParametersDto.setYearFrom(1000);
         filmsParametersDto.setPage(10);
         filmsParametersDto.setRatingTo(9);
         filmsParametersDto.setRatingFrom(2);
-        //        filmsParametersDto.setGenre(genre);
+        filmsParametersDto.setGenres(Collections.singletonList(genre));
         Pageable pageable = PageRequest.of(10, 20);
         filmsParametersDto.setPage(20);
-//        List<Film> filmList = filmService.getFilmsByParameters(filmsParametersDto, pageable);
+        List<Film> filmList = filmService.getFilmsByParameters(filmsParametersDto, pageable);
 
         // Отправляет список фильмов через ArtemisMQ
-//        filmService.sendFilmsViaArtemisMQ(filmList);
+        filmService.sendFilmsViaArtemisMQ(filmList);
     }
 
     private String getGenreByDayOfWeek(int dayOfWeek) {
