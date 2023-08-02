@@ -51,24 +51,6 @@ public class FilmService {
         return list;
     }
 
-//    public List<Film> findAll(FilmsParametersDto filmsParametrsDto) {
-//        Specification<Film> specification = Specification.where(null);
-//
-//        if (filmsParametrsDto.getGenre() != null) {
-//            specification = specification.and(FilmSpecifications.hasGenre(filmsParametrsDto.getGenre()));
-//        }
-//        if (filmsParametrsDto.getYear() != null) {
-//            specification = specification.and(FilmSpecifications.hasYear(filmsParametrsDto.getYear()));
-//        }
-//        if (filmsParametrsDto.getRating() != null) {
-//            specification = specification.and(FilmSpecifications.hasRating(filmsParametrsDto.getRating()));
-//        }
-//
-//        Pageable pageable = PageRequest.of(filmsParametrsDto.getPage(), filmsParametrsDto.getSize());
-//
-//        return filmRepository.findAll(specification, pageable).getContent();
-//    }
-
     public List<Film> getFilmsByParameters(FilmsParametersDto filmsParametersDto, Pageable pageable) {
         Integer ratingFrom = filmsParametersDto.getRatingFrom();
         Integer ratingTo = filmsParametersDto.getRatingTo();
@@ -101,36 +83,6 @@ public class FilmService {
         return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, genres,pageable);
     }
 
-//    public List<Film> getFilmsByParameters(FilmsParametersDto filmsParametersDto, Pageable pageable) {
-//        Integer ratingFrom = filmsParametersDto.getRatingFrom();
-//        Integer ratingTo = filmsParametersDto.getRatingTo();
-//        Integer yearFrom = filmsParametersDto.getYearFrom();
-//        Integer yearTo = filmsParametersDto.getYearTo();
-//        String keyword = filmsParametersDto.getKeyword();
-//        Integer page = filmsParametersDto.getPage();
-//        List<String> genres= filmsParametersDto.getGenres();
-//
-//        if (ratingFrom == null) {
-//            ratingFrom = 0;
-//        }
-//        if (ratingTo == null) {
-//            ratingTo = 10;
-//        }
-//        if (yearFrom == null) {
-//            yearFrom = 1000;
-//        }
-//        if (yearTo == null) {
-//            yearTo = 3000;
-//        }
-//        if (keyword == null) {
-//            keyword = "";
-//        }
-//        if (page == null || page < 0) {
-//            page = 10;
-//        }
-//        return filmRepository.findByParameters(ratingFrom, ratingTo, yearFrom, yearTo, keyword, genres,pageable);
-//    }
-
     public void sendFilmsViaArtemisMQ(List<Film> films){
         //Отправляем список фильмов через ArtemisMQ
         jmsTemplate.convertAndSend(jmsQueue,films);
@@ -140,8 +92,6 @@ public class FilmService {
     public void mailSender(List<Film> films) {
         ObjectMapper objectMapper = new ObjectMapper();
         String genresJsonString;
-
-
 
         Properties properties = new Properties();
         properties.put(mailCfg.getMailSmtpHost(), mailCfg.getHost());
@@ -188,3 +138,21 @@ public class FilmService {
         }
     }
 }
+
+//    public List<Film> findAll(FilmsParametersDto filmsParametrsDto) {
+//        Specification<Film> specification = Specification.where(null);
+//
+//        if (filmsParametrsDto.getGenre() != null) {
+//            specification = specification.and(FilmSpecifications.hasGenre(filmsParametrsDto.getGenre()));
+//        }
+//        if (filmsParametrsDto.getYear() != null) {
+//            specification = specification.and(FilmSpecifications.hasYear(filmsParametrsDto.getYear()));
+//        }
+//        if (filmsParametrsDto.getRating() != null) {
+//            specification = specification.and(FilmSpecifications.hasRating(filmsParametrsDto.getRating()));
+//        }
+//
+//        Pageable pageable = PageRequest.of(filmsParametrsDto.getPage(), filmsParametrsDto.getSize());
+//
+//        return filmRepository.findAll(specification, pageable).getContent();
+//    }

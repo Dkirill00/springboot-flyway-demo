@@ -21,8 +21,6 @@ public class FilmListener {
     @JmsListener(destination = "${jms.queue}")
     public void receiveFilmList(List<Film> filmList){
         log.info("Done");
-        filmService.mailSender(filmList);
-
         try {
             filmService.mailSender(filmList);
         }catch (Exception e){
